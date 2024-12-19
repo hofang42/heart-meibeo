@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Do you love me?</title>
+    <style>
+      html,
+      body {
+        height: 100%;
+        padding: 0;
+        margin: 0;
+        background: #000;
+        overflow: hidden;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        color: white;
+        font-family: "Roboto", sans-serif;
+      }
+
+      #pinkboard {
+        display: none;
+        position: absolute;
+        width: 100%;
+        height: 100%;
+      }
+
+      .message {
+        text-align: center;
+        font-size: 30px;
+      }
+
+      .button {
+        background-color: #ff69b4;
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        font-size: 18px;
+        cursor: pointer;
+        border-radius: 8px;
+        margin: 10px;
+        transition: background-color 0.3s ease;
+      }
+
+      .button:hover {
+        background-color: #ff4081;
+      }
+
+      .button:active {
+        background-color: #e91e63;
+      }
+
+      .meibeo {
+        position: absolute;
+        bottom: 20px;
+        right: 20px;
+        color: #ff69b4;
+        font-size: 24px;
+        font-weight: bold;
+        display: none;
+      }
+    </style>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap"
+      rel="stylesheet"
+    />
+  </head>
+
+  <body>
+    <div class="message">
+      <h1>Do you love me?</h1>
+      <button id="yesButton" class="button">Yes</button>
+      <button id="noButton" class="button">No</button>
+    </div>
+
+    <canvas id="pinkboard"></canvas>
+    <div id="meibeo" class="meibeo">Meibeo ❤️</div>
+
+    <script>
+      function showHeart() {
+        document.getElementById("pinkboard").style.display = "block"; // Show the canvas
+        document.querySelector(".message").style.display = "none"; // Hide the question
+
+        var canvas = document.getElementById("pinkboard");
+        var context = canvas.getContext("2d");
+
+        var totalHearts = 5; // Number of hearts to draw (from small to large)
+        var currentHeart = 0; // Current heart being drawn
+        var currentStep = 0; // Step for the current heart
+        var heartPaths = [];
+        var scaleFactor = 3; // Smaller scale factor for smaller hearts
+
+        // Function to calculate the heart shape points using parametric equations
+        function pointOnHeart(t) {
+          var x = 16 * Math.pow(Math.sin(t), 3);
+          var y =
+            13 * Math.cos(t) -
+            5 * Math.cos(2 * t) -
+            2 * Math.cos(3 * t) -
+            Math.cos(4 * t);
+          return { x: x, y: y };
+        }
+
+        // Generate the heart paths for multiple hearts (different sizes)
+        function generateHeartPaths() {
+          heartPaths = []; // Clear previous paths
+
+          for (var i = 0; i < totalHearts; i++) {
+            var heartPath = [];
+            var scale = (i + 1) * scaleFactor; // Scale increases for each heart
+
+            for (var j = 0; j <= 100; j++) {
+              var t = (j / 100) * (2 * Math.PI);
+              var point = pointOnHeart(t);
+              heartPath.push({
+                x: canvas.width / 2 + point.x * scale, // Center the heart horizontally
+                y: canvas.height / 2 - point.y * scale, // Center the heart vertically
+              });
+            }
+            heartPaths.push(heartPath); // Save the path for this heart
+          }
+        }
+
+        // Function to draw hearts one by one with the pen effect
+        function drawHeart() {
+          context.clearRect(0, 0, canvas.width, canvas.height); // Clear canvas for each frame
+
+          // Draw all previously completed hearts (smaller ones)
+          for (var i = 0; i < currentHeart; i++) {
+            var heartPath = heartPaths[i];
+            context.beginPath();
+            context.moveTo(heartPath[0].x, heartPath[0].y); // Start at the first point
+            for (var j = 0; j < heartPath.length; j++) {
+              var point = heartPath[j];
+              context.lineTo(point.x, point.y); // Draw the line to the next point
+            }
+            context.strokeStyle = "#ff69b4"; // Pink color for the heart
+            context.lineWidth = 3;
+            context.stroke();
+          }
+
+          // Draw the current heart being animated
+          var heartPath = heartPaths[currentHeart];
+          context.beginPath();
+          context.moveTo(heartPath[0].x, heartPath[0].y); // Start at the first point
+          for (var j = 0; j <= currentStep; j++) {
+            var point = heartPath[j];
+            context.lineTo(point.x, point.y); // Draw the line to the next point
+          }
+          context.strokeStyle = "#ff69b4"; // Pink color for the heart
+          context.lineWidth = 3;
+          context.stroke();
+
+          // If the current heart is fully drawn, move to the next one
+          if (currentStep >= heartPath.length - 1) {
+            currentStep = 0;
+            currentHeart++; // Move to the next heart
+          }
+
+          currentStep++; // Increment step for drawing the current heart
+        }
+
+        // Resize the canvas to fit the window
+        function onResize() {
+          canvas.width = window.innerWidth;
+          canvas.height = window.innerHeight;
+          generateHeartPaths(); // Regenerate heart paths after resizing
+        }
+
+        window.onresize = onResize;
+        onResize(); // Initial resize
+
+        // Start the drawing animation
+        function animate() {
+          if (currentHeart < totalHearts) {
+            drawHeart();
+            requestAnimationFrame(animate); // Keep animating
+          } else {
+            document.getElementById("meibeo").style.display = "block"; // Show "Meibeo ❤️" after animation
+          }
+        }
+
+        animate(); // Start animation loop
+      }
+
+      document
+        .getElementById("yesButton")
+        .addEventListener("click", function () {
+          showHeart();
+        });
+
+      document
+        .getElementById("noButton")
+        .addEventListener("click", function () {
+          // Swap the buttons when 'No' is clicked
+          document.getElementById("noButton").style.display = "none";
+          document.getElementById("yesButton").textContent =
+            "Yes, I changed my mind!";
+        });
+    </script>
+  </body>
+</html>
